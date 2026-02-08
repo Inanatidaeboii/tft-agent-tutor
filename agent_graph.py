@@ -9,6 +9,7 @@ from meta import MetaEngine
 import os
 import operator
 from dotenv import load_dotenv
+from tool import search_unit_info
 
 load_dotenv()
 
@@ -36,7 +37,7 @@ def get_bis(unit_name:str) -> str:
 
     return str(engine.get_best_items(formatted_name))
 
-tools = [get_bis]
+tools = [get_bis, search_unit_info]
 
 llm_with_tools = llm.bind_tools(tools)
 
