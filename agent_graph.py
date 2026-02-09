@@ -1,10 +1,11 @@
 from typing import Annotated, Literal, TypedDict
 from langgraph.graph import StateGraph, END, START
 from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
+from langgraph.checkpoint.memory import MemorySaver
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.prebuilt import ToolNode
 from langchain_core.tools import tool
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_tavily import TavilySearch
 import operator
 from meta import MetaEngine
 import os
@@ -17,12 +18,12 @@ load_dotenv()
 
 llm = ChatGoogleGenerativeAI(
     google_api_key=os.getenv("GOOGLE_API_KEY"),
-    model="gemini-3-flash-preview",
+    model="gemini-2.5-flash",
     temperature=0
     )
 
 engine = MetaEngine(data_path="tft_challenger_data.json")
-web_search_tool = TavilySearchResults(max_results=3)
+web_search_tool = TavilySearch()
 
 @tool
 def analyze_meta(unit_name: str) -> str:
@@ -103,4 +104,5 @@ def should_continue(state: AgentState) -> str:
 workflow.add_conditional_edges("agent", should_continue)
 workflow.add_edge("tools", "agent")
 
-app = workflow.compile()
+memory = MemorySaver()
+app = workflow.compile(checkpointer=memory)

@@ -1,11 +1,19 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+from fastapi.middleware.cors import CORSMiddleware
 from agent_graph import app as agent_app
 from models import UserQuery, AgentResponse
 from data_pipeline import run_pipeline
 
 app = FastAPI(title="TFT Coach Agent API")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 @app.get("/")
 def health_check():
     """Simple health check endpoint."""
@@ -17,9 +25,9 @@ def chat_endpoint(query: UserQuery):
     Send a message to the Agent.
     """
     try:
+        config = {"configurable": {"thread_id": query.session_id}}        
         inputs = {"messages": [HumanMessage(content=query.message)]}
-
-        results = agent_app.invoke(inputs)
+        results = agent_app.invoke(inputs, config=config)
 
         last_message = results['messages'][-1]
         
