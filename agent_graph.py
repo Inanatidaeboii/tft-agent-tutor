@@ -10,14 +10,14 @@ from meta import MetaEngine
 import os
 import operator
 from dotenv import load_dotenv
-from tool import search_unit_info
+from tool import search_unit_info, search_item_info
 
 load_dotenv()
 
 
 llm = ChatGoogleGenerativeAI(
     google_api_key=os.getenv("GOOGLE_API_KEY"),
-    model="gemini-2.5-flash",
+    model="gemini-3-flash-preview",
     temperature=0
     )
 
@@ -44,7 +44,7 @@ def search_web(query: str) -> str:
     """
     return web_search_tool.invoke(query)
 
-tools = [analyze_meta, search_web, search_unit_info]
+tools = [analyze_meta, search_web, search_unit_info, search_item_info]
 llm_with_tools = llm.bind_tools(tools)
 
 class AgentState(TypedDict):
@@ -55,10 +55,12 @@ def agent_node(state: AgentState) -> AgentState:
     messages = state['messages']
 
     system_prompt = SystemMessage(content="""
-    You are Agent Ratatouille, a TFT Coach in LATEST SET.
+    You are top-class Teamfight Tactics (TFT) pro player. help the user win TFT games.
+    If the user asks for build advice, use the 'analyze_meta'
+    Don't guess. Use the data., a TFT Coach in LATEST SET.
     
     STRATEGY:
-    1. FIRST, check 'analyze_local_meta' to see what Challengers are playing in our database.
+    1. FIRST, check 'analyze_meta' to see what Challengers are playing in our database.
     2. ALWAYS check LATEST SET of Teamfight Tactics before searching the web.
     3. IF the database has good data (Sample size > 0), suggest builds based on that.
     4. IF the database is empty (or the unit is new), use 'search_web' to find the latest guides.
