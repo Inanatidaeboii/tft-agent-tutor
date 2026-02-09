@@ -160,7 +160,7 @@ function App() {
         </div>
 
         {/* Quick Actions with TFT styling */}
-        <div className="quick-actions">
+        {/* <div className="quick-actions">
           {quickActions.map((action, idx) => (
             <button key={idx} className="action-button">
               <div className="action-button-glow"></div>
@@ -168,7 +168,7 @@ function App() {
               <span className="action-label">{action.label}</span>
             </button>
           ))}
-        </div>
+        </div> */}
 
         {/* Messages Area */}
         <div className="messages-area">
