@@ -57,4 +57,3 @@ class MetaEngine:
     
 if __name__ == "__main__":
     engine = MetaEngine()
-    print(engine.analyze_unit("Gangplank"))

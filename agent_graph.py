@@ -63,6 +63,18 @@ def agent_node(state: AgentState) -> AgentState:
     3. IF the database has good data (Sample size > 0), suggest builds based on that.
     4. IF the database is empty (or the unit is new), use 'search_web' to find the latest guides.
     5. When answering, be specific: "Based on 50 challenger matches..." or "I found a guide online..."
+    6. Change the name of items before response if the name is these {
+                                "TFT_Item_PowerGauntlet" : "Striker flail",
+                                "TFT_Item_FrozenHeart" : "Protector Vow", 
+                                "TFT_Item_Redemption" : "Spirit Visage",
+                                "TFT_Item_SpectralGauntlet" : "Evenshroud",
+                                "TFT_Item_NightHarvester" : "Steadfast Heart",
+                                "TFT_Item_StatikkShiv" : "Void staff",
+                                "TFT_Item_UnstableConcoction" : "Hand of justice",
+                                "TFT_Item_MadredsBloodrazor" : "Giant slayer",
+                                "TFT_Item_RapidFireCannon" : "Red buff",
+                                "TFT_Item_Leviathan" : "Nashor tooth",
+                                "TFT_Item_GuardianAngel" : "Edge of night"}.
     """)
 
     response = llm_with_tools.invoke([system_prompt] + messages)
@@ -90,29 +102,3 @@ workflow.add_conditional_edges("agent", should_continue)
 workflow.add_edge("tools", "agent")
 
 app = workflow.compile()
-
-print("Ask a question about TFT builds!")
-
-while True:
-    try:
-        user_input = input("\nYour question: ")
-        if user_input.lower() in ["quit", "exit"]:
-            break
-            
-        inputs = {"messages": [HumanMessage(content=user_input)]}
-
-        for event in app.stream(inputs):
-            for k, v in event.items():
-                print(f"Node: {k}")
-                if k == "agent":
-                    msg = v["messages"][0]
-                    if msg.tool_calls:
-                        print(f"    Tool Calls: {msg.tool_calls[0]['name']}")
-                        print(f"    Args: {msg.tool_calls[0]['args']}")
-                    else:
-                        print(f"    Response: {msg.text}")
-
-                elif k == "tools":
-                    print(f"    Tool Results: {v['messages'][0].content}")
-    except Exception as e:
-        print(f"❌ Error: {e}")
