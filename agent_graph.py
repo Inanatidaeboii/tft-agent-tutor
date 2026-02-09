@@ -9,14 +9,14 @@ from meta import MetaEngine
 import os
 import operator
 from dotenv import load_dotenv
-from tool import search_unit_info
+from tool import search_unit_info, search_item_info
 
 load_dotenv()
 
 
 llm = ChatGoogleGenerativeAI(
     google_api_key=os.getenv("GOOGLE_API_KEY"),
-    model="gemini-2.5-flash",
+    model="gemini-3-flash-preview",
     temperature=0
     )
 
@@ -38,7 +38,7 @@ def get_bis(unit_name:str) -> str:
 
     return str(engine.get_best_items(formatted_name))
 
-tools = [get_bis, search_unit_info]
+tools = [get_bis, search_unit_info, search_item_info]
 
 llm_with_tools = llm.bind_tools(tools)
 
