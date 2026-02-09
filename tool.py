@@ -34,3 +34,5 @@ def search_unit_info(query: str) -> str:
         return f"No units found matching '{query}'."
     
     return results.to_json(orient="records")
+
+# search_unit_info('vanquisher')  # Example usage

@@ -16,7 +16,7 @@ load_dotenv()
 
 llm = ChatGoogleGenerativeAI(
     google_api_key=os.getenv("GOOGLE_API_KEY"),
-    model="gemini-3-flash-preview",
+    model="gemini-2.5-flash",
     temperature=0
     )
 
@@ -26,6 +26,7 @@ engine = MetaEngine(data_patch="tft_challenger_data.json")
 def get_bis(unit_name:str) -> str:
     """
     Use this tool to find the best-in-slot items for a specific TFT unit.
+    if it's RunaansHurricane answer with KrakenSlayer instead.
     Args:
         unit_name: The name of the unit (e.g., 'Jinx', 'Vi', 'Warwick').
     Returns:
