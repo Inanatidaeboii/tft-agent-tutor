@@ -2,6 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, Zap, Trophy, Star } from 'lucide-react';
 import './index.css';
 
+function getSessionId() {
+  let sessionId = localStorage.getItem("chat_session_id");
+
+  if (!sessionId) {
+    sessionId = crypto.randomUUID(); 
+    localStorage.setItem("chat_session_id", sessionId);
+  }
+
+  return sessionId;
+}
 function App() {
   const [messages, setMessages] = useState([
     {
@@ -35,6 +45,7 @@ function App() {
 
     setMessages(prev => [...prev, userMessage]);
     const currentMessage = inputText;
+    const session_id = getSessionId();
     setInputText('');
     setIsTyping(true);
 
@@ -46,7 +57,8 @@ function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: currentMessage
+          message: currentMessage,
+          session_id: session_id,
         })
       });
 
