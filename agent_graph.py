@@ -10,13 +10,14 @@ from meta import MetaEngine
 import os
 import operator
 from dotenv import load_dotenv
+from tool import search_unit_info
 
 load_dotenv()
 
 
 llm = ChatGoogleGenerativeAI(
     google_api_key=os.getenv("GOOGLE_API_KEY"),
-    model="gemini-3-flash-preview",
+    model="gemini-2.5-flash",
     temperature=0
     )
 
@@ -43,7 +44,7 @@ def search_web(query: str) -> str:
     """
     return web_search_tool.invoke(query)
 
-tools = [analyze_meta, search_web]
+tools = [analyze_meta, search_web, search_unit_info]
 llm_with_tools = llm.bind_tools(tools)
 
 class AgentState(TypedDict):
