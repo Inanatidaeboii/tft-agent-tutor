@@ -90,14 +90,3 @@ def crawl_matches(match_ids, region_routing='AMERICAS'):
             print(f"Error fetching match {match_id}: {e}")
     
     return dataset
-
-df_challenger = get_challenger_players(region)
-unique_match_ids = get_match_ids_direct(df_challenger, region_routing='AMERICAS', matchs_per_player=5)
-training_data = crawl_matches(unique_match_ids, region_routing='AMERICAS')
-
-filename = "tft_challenger_data.json"
-with open(filename, "w") as f:
-    json.dump(training_data, f, indent=4)
-
-print("\n🎉 Data collection complete!")
-print("="*50)

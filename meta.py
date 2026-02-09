@@ -1,43 +1,60 @@
 import pandas as pd
 import json
+from collections import Counter
 
 class MetaEngine:
-    def __init__(self, data_patch="tft_challenger_data.json"):
-        with open(data_patch, 'r') as f:
-            raw_data = json.load(f)
-        
-        self.df_units = self._flatten_units(raw_data)
-        print(f"Loaded {len(self.df_units)} unit records from {data_patch}")
+    def __init__(self, data_path="tft_challenger_data.json"):
+        self.data_path = data_path
+        self._load_data()
 
-    def _flatten_units(self, raw_data):
-        """Converts complex JSON structure into a flat DataFrame for easier analysis."""
-        flat_list = []
-        for match in raw_data:
-            placement = match['placement']
-            
-            if placement <= 4:
-                for unit in match['units']:
-                    flat_list.append({
-                        "units": unit['name'],
-                        "items": unit['items'],
-                        "tier": unit['tier'],
-                        "placement": placement
-                    })
-        return pd.DataFrame(flat_list)
+    def _load_data(self):
+        try:
+            with open(self.data_path, 'r') as f:
+                self.raw_data = json.load(f)
+            print(f"Data loaded successfully from {self.data_path}")
+        except FileNotFoundError:
+            self.raw_data = []
+            print(f"Data file {self.data_path} not found. Starting with empty data.")
+
+    def analyze_unit(self, unit_name: str):
+        """
+        Analyze a specific unit from the local match data.
+        Returns: Pick Count, Top Items, Average Placement
+        """
+
+        unit_name_lower = unit_name.lower()
+
+        relevent_units = []
+        placements = []
+
+        for match in self.raw_data:
+            for unit in match.get('units', []):
+                raw_name = unit.get('name', '').lower()
+
+                if unit_name_lower in raw_name:
+                    relevent_units.append(unit)
+                    placements.append(match.get('placement', 8))
+        
+        count = len(relevent_units)
+
+        if count == 0:
+            return None
+        
+        avg_placement = sum(placements) / count
+
+        all_items = []
+        for u in relevent_units:
+            all_items.extend(u.get('items', []))
+
+        item_counts = Counter(all_items).most_common(5)
+
+        return {
+            "unit": unit_name,
+            "sample_size": count,
+            "average_placement": round(avg_placement, 2),
+            "top_items": item_counts
+        }
     
-    def get_best_items(self, unit_name):
-        """Returns the most common items for specific unit in top 4 matches"""
-        
-        unit_df = self.df_units[self.df_units['units'] == unit_name]
-
-        if unit_df.empty:
-            return f"No data found for {unit_name}"
-        
-        all_items = [item for sublist in unit_df['items'] for item in sublist]
-
-        item_counts = pd.Series(all_items).value_counts().head(5)
-        return item_counts.to_dict()
-
 if __name__ == "__main__":
     engine = MetaEngine()
-    print(engine.get_best_items("TFT16_Zoe"))
+    print(engine.analyze_unit("Gangplank"))

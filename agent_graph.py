@@ -4,6 +4,7 @@ from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.prebuilt import ToolNode
 from langchain_core.tools import tool
+from langchain_community.tools.tavily_search import TavilySearchResults
 import operator
 from meta import MetaEngine
 import os
@@ -19,25 +20,30 @@ llm = ChatGoogleGenerativeAI(
     temperature=0
     )
 
-engine = MetaEngine(data_patch="tft_challenger_data.json")
+engine = MetaEngine(data_path="tft_challenger_data.json")
+web_search_tool = TavilySearchResults(max_results=3)
 
 @tool
-def get_bis(unit_name:str) -> str:
+def analyze_meta(unit_name: str) -> str:
     """
-    Use this tool to find the best-in-slot items for a specific TFT unit.
-    Args:
-        unit_name: The name of the unit (e.g., 'Jinx', 'Vi', 'Warwick').
-    Returns:
-        A string containing the top items and their frequency.
+    Check local Challenger data for a unit's statistics (Items, Winrate).
+    ALWAYS use this tool FIRST before searching the web.
     """
-    print(f"Tool Triggered: Searching for {unit_name}...")
+    stats = engine.analyze_unit(unit_name)
+    if stats:
+        return f"LOCAL DATA FOUND: {stats}"
+    else:
+        return "NO LOCAL DATA FOUND"
+    
+@tool
+def search_web(query: str) -> str:
+    """
+    Search the internet for TFT guides, meta snapshots, or patch notes.
+    Use this ONLY if local data is missing or insufficient.
+    """
+    return web_search_tool.invoke(query)
 
-    formatted_name = f"TFT16_{unit_name.capitalize()}"
-
-    return str(engine.get_best_items(formatted_name))
-
-tools = [get_bis]
-
+tools = [analyze_meta, search_web]
 llm_with_tools = llm.bind_tools(tools)
 
 class AgentState(TypedDict):
@@ -48,9 +54,14 @@ def agent_node(state: AgentState) -> AgentState:
     messages = state['messages']
 
     system_prompt = SystemMessage(content="""
-    You are top-class Teamfight Tactics (TFT) pro player. help the user win TFT games.
-    If the user asks for build advice, use the 'get_bis'
-    Don't guess. Use the data.
+    You are Agent Ratatouille, a TFT Coach in LATEST SET.
+    
+    STRATEGY:
+    1. FIRST, check 'analyze_local_meta' to see what Challengers are playing in our database.
+    2. ALWAYS check LATEST SET of Teamfight Tactics before searching the web.
+    3. IF the database has good data (Sample size > 0), suggest builds based on that.
+    4. IF the database is empty (or the unit is new), use 'search_web' to find the latest guides.
+    5. When answering, be specific: "Based on 50 challenger matches..." or "I found a guide online..."
     """)
 
     response = llm_with_tools.invoke([system_prompt] + messages)
@@ -98,7 +109,7 @@ while True:
                         print(f"    Tool Calls: {msg.tool_calls[0]['name']}")
                         print(f"    Args: {msg.tool_calls[0]['args']}")
                     else:
-                        print(f"    Response: {msg.content}")
+                        print(f"    Response: {msg.text}")
 
                 elif k == "tools":
                     print(f"    Tool Results: {v['messages'][0].content}")
