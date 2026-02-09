@@ -7,7 +7,7 @@ function App() {
     {
       id: 1,
       type: 'assistant',
-      text: 'Welcome, Tactician! I\'m your TFT AI Coach. Need help with team comps, itemization, or strategy? Let\'s climb to Challenger together!',
+      text: 'Welcome, Tactician! I\'m your TFT AI Coach. How can I help you today?',
       timestamp: new Date()
     }
   ]);
@@ -34,20 +34,53 @@ function App() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentMessage = inputText;
     setInputText('');
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // Call the REST API
+      const response = await fetch('http://localhost:8000/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: currentMessage
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Create assistant message from API response
       const assistantMessage = {
         id: messages.length + 2,
         type: 'assistant',
-        text: 'Great question! For the current meta, focus on strong early game units and transition into late game carries. I can help you with specific comps if you share your current rank and playstyle!',
+        text: data.response,
+        tool_used: data.tool_used,
         timestamp: new Date()
       };
+      
       setMessages(prev => [...prev, assistantMessage]);
       setIsTyping(false);
-    }, 1500);
+    } catch (error) {
+      console.error('Error calling chat API:', error);
+      
+      // Show error message to user
+      const errorMessage = {
+        id: messages.length + 2,
+        type: 'assistant',
+        text: 'Sorry, I encountered an error connecting to the chat service. Please make sure the server is running on localhost:8000.',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+      setIsTyping(false);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -161,6 +194,12 @@ function App() {
                   
                   <div className={`message-bubble ${message.type === 'user' ? 'bubble-user' : 'bubble-assistant'}`}>
                     <p className="message-text">{message.text}</p>
+                    {message.type === 'assistant' && message.tool_used && (
+                      <div className="tool-badge">
+                        <Zap className="tool-icon" />
+                        <span className="tool-text">Tool: {message.tool_used}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
